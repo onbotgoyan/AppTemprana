@@ -11,6 +11,16 @@
 // @run-at       document-end
 // ==/UserScript==
 
+// ==UserScript==
+// @name         Apps para Agente (V6)
+// @namespace    http://tampermonkey.net/
+// @version      1.0
+// @description  Apps CRM
+// @author       Yancarlos
+// @match        https://home1_ch.mibot.cl/softphone/webphonev2.php*
+// @grant        none
+// @run-at       document-end
+// ==/UserScript==
 (function() {
     'use strict';
 
@@ -46,10 +56,7 @@
 
         function obtenerCampañaReal() {
             const btnCampana = document.querySelector('button[data-id="selCampana"] span.filter-option');
-            if (btnCampana) {
-                const txt = btnCampana.innerText.trim();
-                return (txt !== "" && txt !== "Seleccione") ? txt : null;
-            }
+            if (btnCampana) { const txt = btnCampana.innerText.trim(); return (txt !== "" && txt !== "Seleccione") ? txt : null; }
             return null;
         }
 
@@ -62,9 +69,7 @@
                 const porcentaje = barraOriginal.getAttribute('aria-valuenow') || "0";
                 display.innerText = `CAMPAÑA: ${detectada} (${porcentaje}%)`;
                 display.style.background = `linear-gradient(to right, #3DBB9A ${porcentaje}%, #34495e ${porcentaje}%)`;
-            } else if (display) {
-                display.innerText = "CAMPAÑA: " + detectada;
-            }
+            } else if (display) { display.innerText = "CAMPAÑA: " + detectada; }
         }
 
         async function reasignarCampañaYConectar() {
@@ -84,12 +89,7 @@
                 await new Promise(r => setTimeout(r, 300));
                 const opcionesCamp = document.querySelectorAll('.dropdown-menu.open li a span.text');
                 let exito = false;
-                opcionesCamp.forEach(opt => {
-                    if (opt.innerText.trim() === guardada) {
-                        opt.click();
-                        exito = true;
-                    }
-                });
+                opcionesCamp.forEach(opt => { if (opt.innerText.trim() === guardada) { opt.click(); exito = true; } });
                 if (exito || btnCampana.innerText.trim() === guardada) {
                     await new Promise(r => setTimeout(r, 500));
                     const btnConectar = document.getElementById('btnRegister');
@@ -151,7 +151,6 @@
         `;
         document.head.appendChild(style);
 
-        // --- CHECKLIST CALIDAD ---
         const wrapperCheck = document.createElement('div');
         wrapperCheck.className = 'wrapper-checklist';
         const btnToggleCheck = document.createElement('button');
@@ -208,7 +207,6 @@
         wrapperCheck.append(btnToggleCheck, pCheck);
         document.body.append(wrapperCheck);
 
-        // --- PANELES DINÁMICOS ---
         const pContrato = document.createElement('div');
         pContrato.className = 'panel-drop-info';
         pContrato.innerHTML = `<h4 style="margin:0 0 5px 0; color:#0b518f; font-size:13px; border-bottom:1px solid #999;"><b>📓 SCRIPT FRACCIONAMIENTO</b></h4><div id="fracc-content-m2" style="font-size: 10.5px; line-height: 1.35; text-align: justify; color: #222;">Cargando script M2...</div>`;
@@ -250,7 +248,6 @@
         dCamp.innerText = "CAMPAÑA: " + (localStorage.getItem('ultima_campaign') || "...");
         p.append(dCamp);
 
-        // FILA 1: Refresco, Plantillas, SPEECH, REFUT, FRACC + LATENCIA
         const f1 = document.createElement('div'); f1.className = 'fila-agente';
         const btnRef = document.createElement('button'); btnRef.className = 'btn-agente'; btnRef.innerText = '🔄'; btnRef.onclick = () => location.reload();
         const configP = [
@@ -316,7 +313,6 @@
         f1.append(btnRef, selP, btnB1, btnB2, btnC, dLat);
         p.append(f1);
 
-        // FILA 2: Calculadora
         const f2 = document.createElement('div'); f2.className = 'fila-agente';
         const dCal = document.createElement('div'); dCal.className = 'calc-box';
         const iP = document.createElement('input'); iP.className = 'input-calc'; iP.placeholder = 'Yape';
@@ -343,7 +339,6 @@
         dCal.append(iP, iD, chk, rA, rV, rM, rS); f2.append(dCal);
         p.append(f2);
 
-        // FILA 3: Registro y Contadores
         const f3 = document.createElement('div'); f3.className = 'fila-agente';
         const selAg = document.createElement('select'); selAg.className = 'select-agente-reg'; selAg.style.width = "80px";
         const optDefA = document.createElement('option'); optDefA.innerText = "👤 AGENTE"; selAg.append(optDefA);
@@ -402,7 +397,6 @@
         f3.append(selAg, inM, inF, btnR, dAvance, dAvancePlus, dAvanceF);
         p.append(f3);
 
-        // FILA 4: Estrategias
         const f4 = document.createElement('div'); f4.className = 'fila-agente';
         const dColaBox = document.createElement('div'); dColaBox.id = 'container-estrategia'; dColaBox.className = 'calc-box'; dColaBox.style.background = 'rgba(61, 187, 154, 0.1)';
         const selEst = document.createElement('select'); selEst.className = 'select-agente-reg'; selEst.style.width = "80px";
@@ -431,12 +425,8 @@
         let peticionActual = "";
         const consultarEstrategia = async () => {
             let seleccion = selEst.value;
-            let parametro = seleccion;
-            if (seleccion === "AUTO") {
-                const ag = selAg.value;
-                if (!ag || ag === "👤 AGENTE") { resCola.innerText = "Sel. Agente"; resCuartil.innerText = "C: -"; return; }
-                parametro = ag;
-            }
+            let parametro = seleccion === "AUTO" ? (selAg.value !== "👤 AGENTE" ? selAg.value : "") : seleccion;
+            if (!parametro && seleccion === "AUTO") { resCola.innerText = "Sel. Agente"; return; }
             peticionActual = parametro;
             try {
                 const r = await fetch(`${URL_ESTRATEGIAS}?estrategia=${encodeURIComponent(parametro)}`);
@@ -446,19 +436,16 @@
                 if (peticionActual !== parametro) return;
                 const savedTime = localStorage.getItem(`last_copy_${selEst.value}`);
 
-                // --- CAMBIO QUIRÚRGICO: CONEXIÓN AUTOMÁTICA AL CAMBIAR ESTRATEGIA ---
+                // --- MODIFICACIÓN: CONEXIÓN AUTOMÁTICA AL ACTUALIZAR ---
                 if (ultimoValorE !== "" && ultimoValorE !== valE) {
                     iconMsg.innerText = "📩"; iconMsg.style.fontSize = "14px"; iconMsg.style.display = 'inline';
-                    localStorage.setItem('ultima_campaña', valE); // Actualiza la campaña guardada
-                    reasignarCampañaYConectar(); // Conecta automáticamente
+                    localStorage.setItem('ultima_campaña', valE); // Actualiza la campaña localmente
+                    reasignarCampañaYConectar(); // Conecta a la nueva campaña
                 } else if (savedTime) { 
                     iconMsg.innerText = savedTime; iconMsg.style.fontSize = "10px"; iconMsg.style.display = 'inline'; 
                 }
 
-                if (resCola.innerText !== "¡Copiado!") { 
-                    ultimoValorE = valE; resCola.innerText = valE; resCuartil.innerText = `C: ${valQ}`; 
-                }
-
+                if (resCola.innerText !== "¡Copiado!") { ultimoValorE = valE; resCola.innerText = valE; resCuartil.innerText = `C: ${valQ}`; }
                 const dSup = document.getElementById('campana-display');
                 const btnConectar = document.getElementById('btnRegister');
                 if (dSup) {
