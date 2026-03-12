@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Apps para Agente (V6.9.2)
+// @name         Apps para Agente (V6.9.3)
 // @namespace    http://tampermonkey.net/
-// @version      1.9.2
+// @version      1.9.3
 // @description  Apps CRM
 // @author       Yancarlos
 // @match        https://home1_ch.mibot.cl/softphone/webphonev2.php*
