@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Apps para Agente (V6.5)
+// @name         Apps para Agente (V6.6)
 // @namespace    http://tampermonkey.net/
-// @version      1.5
+// @version      1.6
 // @description  Apps CRM
 // @author       Yancarlos
 // @match        https://home1_ch.mibot.cl/softphone/webphonev2.php*
@@ -56,7 +56,7 @@
     const URL_ESTRATEGIAS = "https://script.google.com/macros/s/AKfycbzC1xj9tk9oIFfL36-644UB1E1XrYUb26fsJgt_uAvqDRtGoyrksAh_BvSQ5iaAwrHvsw/exec";
     const URL_LISTA_AGENTES = "https://script.google.com/macros/s/AKfycbyCaZXaUfzbJsxL4SxTNgQhgy3E1zMmD0UPwFsCnP2GMCe7f9XgNVyw9WnNYUhORhn_QA/exec";
 
-    // URLs DINÁMICAS
+    // URLs DINÁMICAS (L2, M2 y N2)
     const URL_SPEECH_DINAMICO = "https://script.google.com/macros/s/AKfycbyaUAQshAn6g3dSl2HaNwwn0kyGQ66whz-IbBrhnMUFpOTpgxybzQMKyvO2A4vEA0VfGw/exec";
     const URL_FRACC_DINAMICO = "https://script.google.com/macros/s/AKfycbwoFgnE0c2kiz3NcQUroVEQjVyrvHVIgK3i2IhsGIARviqxcBUCtWb1-aIvG0qKO9Q52Q/exec";
     const URL_REFUT_DINAMICO = "https://script.google.com/macros/s/AKfycbw3gfUMmkZTPGNoadliAvvhqekHXWhvaWtpVfOMfuYXSBmlKTe0REvgfkhP8pGqpoly8g/exec";
@@ -158,174 +158,4 @@
             .check-item { display: flex; align-items: center; justify-content: space-between; padding: 3px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: help; color: #555; transition: all 0.2s; }
             .check-item.item-rojo { color: #d63031; }
             .check-item.active { color: #1b7e41; background: rgba(61, 187, 154, 0.2); }
-            .check-item.active-intenso { color: #fff !important; background: #3DBB9A !important; }
-            .check-item input { cursor: pointer; width: 13px; height: 13px; margin: 0; }
-            .res-calidad { text-align: center; font-size: 13px; font-weight: bold; border-top: 1px solid #999; padding-top: 5px; margin-top: 5px; color: #2c3e50; }
-            .panel-drop-info { position: fixed; top: 210px; right: 66px; background: rgba(211, 211, 211, 0.98); color: #333; padding: 12px; border-radius: 10px; z-index: 999998; display: none; flex-direction: column; gap: 8px; font-family: Arial; border: 1px solid rgba(150,150,150,0.5); width: 420px; box-sizing: border-box; backdrop-filter: blur(8px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); max-height: 480px; overflow-y: auto; }
-            .fila-agente { display: flex; align-items: center; gap: 5px; justify-content: space-between; width: 100%; }
-            .btn-agente { cursor: pointer; border: none; border-radius: 4px; padding: 4px 8px; color: white; font-weight: bold; background: #0b518f; font-size: 11px; }
-            .select-tipi, .select-agente-reg { padding: 4px; border-radius: 4px; font-weight: bold; background: white; color: black !important; font-size: 11px; }
-            .calc-box { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.4); padding: 5px; border-radius: 6px; border: 1px solid #999; width: 100%; box-sizing: border-box; justify-content: space-between; }
-            .input-calc, .input-reg { width: 50px; padding: 3px; border-radius: 4px; border: 1px solid #999; text-align: center; font-size: 11px; background: white !important; }
-            .res-val { font-size: 11.5px; font-weight: bold; white-space: nowrap; }
-            .v-ahorro { color: #d63031; } .v-final { color: #1b7e41; } .v-cuota { color: #5b48d9; } .v-total-p { color: #0984e3; }
-            .campana-box { background: #34495e; padding: 5px; border-radius: 5px; font-size: 11px; text-align: center; border: 1px solid #2d8c73; color: white; font-weight: bold; transition: background 0.5s ease; text-shadow: none; width: 100%; }
-            .avance-box { background: #fff; padding: 3px 6px; border-radius: 4px; border: 1px solid #999; font-weight: bold; color: #e67e22; font-size: 11px; min-width: 32px; text-align: center; }
-            .latencia-box { font-size: 10px; font-weight: bold; color: #1b7e41; background: #fff; padding: 3px 5px; border-radius: 4px; border: 1px solid #999; min-width: 35px; text-align: center; }
-        `;
-        document.head.appendChild(style);
-
-        const p = document.createElement('div'); p.id = 'panel-agente-pro'; p.className = 'panel-agente';
-        const dCamp = document.createElement('div'); dCamp.id = 'campana-display';
-        dCamp.className = 'campana-box';
-        dCamp.innerText = "CAMPAÑA: " + (localStorage.getItem('ultima_campaign') || "...");
-        p.append(dCamp);
-
-        // FILA 1: Refresco, Plantillas, SPEECH, REFUT, FRACC + LATENCIA
-        const f1 = document.createElement('div'); f1.className = 'fila-agente';
-        const btnRef = document.createElement('button'); btnRef.className = 'btn-agente'; btnRef.innerText = '🔄'; btnRef.onclick = () => location.reload();
-        
-        const configP = [
-            { n: 'FRACCIONAMIENTO', t: 'FRACC: Se ofreció al TT Campaña de Fraccionamiento del 25% //', e: ["Contacto_Efectivo", "FRACCIONAMIENTO", "Sin incidencia (PDP Pura)"] },
-            { n: 'NUMERO EQUIVOCADO', t: 'NE: Cliente Indica que no conoce a persona en mención', e: ["Contacto_No_Efectivo", "Telefono no le corresponde/No lo conoce"] }
-        ];
-        for (let i = 0; i < 7; i++) {
-            const idx = (hoy.getDay() + i) % 7;
-            const nom = cap(diasSemana[idx]);
-            const textoFecha = (i === 0) ? `Hoy ${getFM(i)}` : `${nom} ${getFM(i)}`;
-            configP.push({ n: i === 0 ? 'PDP HOY' : `PDP ${nom.toUpperCase()}`, t: `PDP: TT indica que pagara el día ${textoFecha} //`, e: ["Contacto_Efectivo", "PDP", "Sin incidencia (PDP Pura)"] });
-        }
-
-        const selP = document.createElement('select'); selP.className = 'select-tipi'; selP.style.width = "90px";
-        const optDefP = document.createElement('option'); optDefP.innerText = "📋 PLANTILLAS"; selP.append(optDefP);
-        configP.forEach((it, i) => { const o = document.createElement('option'); o.innerText = it.n; o.value = i; selP.append(o); });
-        selP.onchange = () => {
-            const it = configP[selP.value];
-            const cj = document.getElementById('observaciones');
-            if (cj) { cj.value = ""; cj.focus(); document.execCommand('insertText', false, it.t); if (it.e) ejecutarEscalera(it.e); }
-            selP.selectedIndex = 0;
-        };
-
-        const dLat = document.createElement('div'); dLat.className = 'latencia-box'; dLat.innerText = '...';
-        const medirPing = async () => {
-            const servidores = ["https://1.1.1.1", "https://8.8.8.8"];
-            for (let sv of servidores) {
-                const inicio = Date.now();
-                try {
-                    await fetch(sv, { mode: 'no-cors', cache: 'no-cache', signal: AbortSignal.timeout(2000) });
-                    const ms = Date.now() - inicio;
-                    dLat.innerText = ms + 'ms';
-                    dLat.style.color = ms < 150 ? "#1b7e41" : "#d63031";
-                    return;
-                } catch (e) { continue; }
-            }
-        };
-        setInterval(medirPing, 5000); medirPing();
-
-        f1.append(btnRef, selP, dLat);
-        p.append(f1);
-
-        // FILA 3: Registro y Contadores
-        const f3 = document.createElement('div'); f3.className = 'fila-agente';
-        const selAg = document.createElement('select'); selAg.className = 'select-agente-reg'; selAg.style.width = "80px";
-        const optDefA = document.createElement('option'); optDefA.innerText = "👤 AGENTE"; selAg.append(optDefA);
-        const BLOQUEO_PERMANENTE = true;
-
-        const inM = document.createElement('input'); inM.className = 'input-reg'; inM.placeholder = 'Móvil'; inM.style.width = "65px";
-        const inF = document.createElement('input'); inF.type = 'date'; inF.className = 'input-reg'; inF.style.width = "65px";
-        const btnR = document.createElement('button'); btnR.className = 'btn-agente'; btnR.style.background = '#3DBB9A'; btnR.innerText = 'PDP';
-
-        const dAvance = document.createElement('div'); dAvance.className = 'avance-box'; dAvance.innerText = '...';
-        const dAvancePlus = document.createElement('div'); dAvancePlus.className = 'avance-box'; dAvancePlus.innerText = '...'; dAvancePlus.style.color = '#1b7e41';
-        const dAvanceF = document.createElement('div'); dAvanceF.className = 'avance-box'; dAvanceF.innerText = '...'; dAvanceF.style.color = '#0b518f';
-
-        const actualizarAvance = async () => {
-            const nombreActual = selAg.value;
-            if (!nombreActual || nombreActual === "👤 AGENTE") return;
-            try {
-                const r = await fetch(`${URL_AVANCE}?agente=${encodeURIComponent(nombreActual)}`);
-                const num = await r.text();
-                if(selAg.value === nombreActual) dAvance.innerText = num || "0";
-            } catch (e) { dAvance.innerText = 'err'; }
-        };
-
-        const actualizarAvancePlus = async () => {
-            const nombreActual = selAg.value;
-            if (!nombreActual || nombreActual === "👤 AGENTE") return;
-            try {
-                const r = await fetch(`${URL_AVANCE_PLUS}?agente=${encodeURIComponent(nombreActual)}`);
-                const num = await r.text();
-                if(selAg.value === nombreActual) dAvancePlus.innerText = num || "0";
-            } catch (e) { dAvancePlus.innerText = 'err'; }
-        };
-
-        const actualizarAvanceF = async () => {
-            const nombreActual = selAg.value;
-            if (!nombreActual || nombreActual === "👤 AGENTE") return;
-            try {
-                const r = await fetch(`${URL_AVANCE_F}?agente=${encodeURIComponent(nombreActual)}`);
-                const num = await r.text();
-                if(selAg.value === nombreActual) dAvanceF.innerText = num || "0";
-            } catch (e) { dAvanceF.innerText = 'err'; }
-        };
-
-        selAg.onchange = () => {
-            if (selAg.value !== "👤 AGENTE") {
-                localStorage.setItem('agente_fijo', selAg.value);
-                if(BLOQUEO_PERMANENTE) selAg.disabled = true;
-                actualizarAvance(); actualizarAvancePlus(); actualizarAvanceF();
-            }
-        };
-
-        // --- INTERVENCIÓN QUIRÚRGICA: Lógica cíclica del botón PDP ---
-        btnR.onclick = async () => {
-            if(!selAg.value || !inM.value || !inF.value) { 
-                btnR.style.background = '#e67e22';
-                setTimeout(()=>btnR.style.background='#3DBB9A', 1000); 
-                return; 
-            }
-            const [anio, mes, dia] = inF.value.split('-');
-            const fFull = `${dia}/${mes}/${anio}`;
-            btnR.innerText = "..."; btnR.style.background = '#f1c40f';
-            
-            try {
-                // Función Principal: Registro
-                await fetch(URL_REGISTRO, { method: 'POST', mode: 'no-cors', body: JSON.stringify({movil: inM.value, fechaPromesa: fFull, agente: selAg.value}) });
-                btnR.style.background = '#3DBB9A'; inM.value = ""; inF.value = "";
-            } catch (e) { 
-                btnR.style.background = '#c0392b';
-                setTimeout(() => btnR.style.background = '#3DBB9A', 2000); 
-            } finally { 
-                btnR.innerText = "PDP";
-                // Función Secundaria: Actualización tras 10 segundos
-                setTimeout(() => {
-                    actualizarAvance();
-                    actualizarAvancePlus();
-                    actualizarAvanceF();
-                }, 10000);
-            }
-        };
-
-        f3.append(selAg, inM, inF, btnR, dAvance, dAvancePlus, dAvanceF);
-        p.append(f3);
-
-        // Carga de Agentes
-        const cargarAgentes = async () => {
-            try {
-                const r = await fetch(URL_LISTA_AGENTES);
-                const agentes = await r.json();
-                if (Array.isArray(agentes)) {
-                    LISTA_AGENTES = agentes;
-                    const guardado = localStorage.getItem('agente_fijo');
-                    selAg.innerHTML = ""; selAg.append(optDefA);
-                    LISTA_AGENTES.sort().forEach(a => { const o = document.createElement('option'); o.innerText = o.value = a; selAg.append(o); });
-                    if (guardado) { selAg.value = guardado; if(BLOQUEO_PERMANENTE) selAg.disabled = true; }
-                }
-            } catch (e) { console.error("Error al cargar lista de agentes"); }
-        };
-        cargarAgentes();
-
-        document.body.append(p);
-    }
-    setTimeout(iniciarAppsAgente, 20);
-})();
+            .check-item.active-intenso { color: #fff !important; background: #3DBB9A !important
