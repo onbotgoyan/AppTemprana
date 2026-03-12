@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Apps para Agente (V6.9)
+// @name         Apps para Agente (V6.9.1)
 // @namespace    http://tampermonkey.net/
-// @version      1.9
+// @version      1.9.1
 // @description  Apps CRM
 // @author       Yancarlos
 // @match        https://home1_ch.mibot.cl/softphone/webphonev2.php*
@@ -262,3 +262,282 @@
         const actualizarRefutDinamico = async () => {
             try {
                 const r = await fetch(URL_REFUT_DINAMICO);
+                const txt = await r.text();
+                const container = document.getElementById('refut-content-n2');
+                if (container) container.innerText = txt;
+            } catch (e) { console.error("Error al cargar refutaciones N2"); }
+        };
+        document.body.append(pContrato, pB1, pB2);
+
+        const p = document.createElement('div'); p.id = 'panel-agente-pro'; p.className = 'panel-agente';
+        const dCamp = document.createElement('div'); dCamp.id = 'campana-display';
+        dCamp.className = 'campana-box';
+        dCamp.innerText = "CAMPAÑA: " + (localStorage.getItem('ultima_campaign') || "...");
+        p.append(dCamp);
+
+        // FILA 1: Refresco, Plantillas, SPEECH, REFUT, FRACC + LATENCIA
+        const f1 = document.createElement('div'); f1.className = 'fila-agente';
+        const btnRef = document.createElement('button'); btnRef.className = 'btn-agente'; btnRef.innerText = '🔄'; btnRef.onclick = () => location.reload();
+        const configP = [
+            { n: 'FRACCIONAMIENTO', t: 'FRACC: Se ofreció al TT Campaña de Fraccionamiento del 25% //', e: ["Contacto_Efectivo", "FRACCIONAMIENTO", "Sin incidencia (PDP Pura)"] },
+            { n: 'NUMERO EQUIVOCADO', t: 'NE: Cliente Indica que no conoce a persona en mención', e: ["Contacto_No_Efectivo", "Telefono no le corresponde/No lo conoce"] },
+            { n: 'CORTA LLAMADA (SC)', t: 'CC: Corta Llamada - sin contacto', e: ["Contacto_No_Efectivo", "Se cortó la llamada"] },
+            { n: 'NO CONTESTA', t: 'NC: No Contesta - sin contacto', e: ["No_Contacto", "No contesta"] },
+            { n: 'BUZON DE VOZ', t: 'BZ: Llamada ingresa a Buzón de voz - sin contacto', e: ["No_Contacto", "Apagado / Casilla de voz/Congestión"] },
+            { n: 'TT CORTA LLAMADA', t: 'CCT: TT corta llamada y no da fecha de pago', e: ["Contacto_Efectivo", "SIN PDP", "Cliente corta llamada"] },
+            { n: 'LLAMADA VACIA', t: 'LV: Llamada Vacia', e: ["Contacto_No_Efectivo", "Se cortó la llamada"] },
+            { n: 'TERCERO DEJA MENSAJE', t: 'TM: Tercero dejara mensaje a TT', e: ["Contacto_No_Efectivo", "Mensaje Tercero"] },
+            { n: 'YA PAGO', t: 'YP: TT indica que ya pago su servicio a través del App', e: ["Contacto_Efectivo", "SIN PDP", "Cliente indica que ya pagó"] }
+        ];
+        for (let i = 0; i < 7; i++) {
+            const idx = (hoy.getDay() + i) % 7;
+            const nom = cap(diasSemana[idx]);
+            const textoFecha = (i === 0) ? `Hoy ${getFM(i)}` : `${nom} ${getFM(i)}`;
+            configP.push({ n: i === 0 ? 'PDP HOY' : `PDP ${nom.toUpperCase()}`, t: `PDP: TT indica que pagara el día ${textoFecha} //`, e: ["Contacto_Efectivo", "PDP", "Sin incidencia (PDP Pura)"] });
+        }
+        const selP = document.createElement('select'); selP.className = 'select-tipi'; selP.style.width = "90px";
+        const optDefP = document.createElement('option'); optDefP.innerText = "📋 PLANTILLAS"; selP.append(optDefP);
+        configP.forEach((it, i) => { const o = document.createElement('option'); o.innerText = it.n; o.value = i; selP.append(o); });
+        selP.onchange = () => {
+            const it = configP[selP.value];
+            const cj = document.getElementById('observaciones');
+            if (cj) { cj.value = ""; cj.focus(); document.execCommand('insertText', false, it.t); if (it.e) ejecutarEscalera(it.e); }
+            selP.selectedIndex = 0;
+        };
+
+        const btnB1 = document.createElement('button'); btnB1.className = 'btn-agente'; btnB1.innerText = 'SPEECH';
+        const btnB2 = document.createElement('button'); btnB2.className = 'btn-agente'; btnB2.innerText = 'INFO+';
+        const btnC = document.createElement('button'); btnC.className = 'btn-agente'; btnC.style.background = '#3DBB9A'; btnC.innerText = 'FRACC';
+
+        const togglePanel = (panelActivo) => {
+            [pContrato, pB1, pB2].forEach(pnl => {
+                if (pnl === panelActivo) pnl.style.display = (pnl.style.display === 'flex') ? 'none' : 'flex';
+                else pnl.style.display = 'none';
+            });
+            if (panelActivo === pContrato && pContrato.style.display === 'flex') actualizarFraccDinamico();
+            if (panelActivo === pB1 && pB1.style.display === 'flex') actualizarSpeechDinamico();
+            if (panelActivo === pB2 && pB2.style.display === 'flex') actualizarRefutDinamico();
+        };
+
+        btnB1.onclick = () => togglePanel(pB1);
+        btnB2.onclick = () => togglePanel(pB2);
+        btnC.onclick = () => togglePanel(pContrato);
+
+        const dLat = document.createElement('div'); dLat.className = 'latencia-box'; dLat.innerText = '...';
+        const medirPing = async () => {
+            const servidores = ["https://1.1.1.1", "https://8.8.8.8", "https://4.2.2.2"];
+            for (let sv of servidores) {
+                const inicio = Date.now();
+                try {
+                    await fetch(sv, { mode: 'no-cors', cache: 'no-cache', signal: AbortSignal.timeout(2000) });
+                    const ms = Date.now() - inicio;
+                    dLat.innerText = ms + 'ms';
+                    dLat.style.color = ms < 150 ? "#1b7e41" : (ms < 300 ? "#e67e22" : "#d63031");
+                    return;
+                } catch (e) { continue; }
+            }
+            dLat.innerText = 'OFF'; dLat.style.color = "#d63031";
+        };
+        setInterval(medirPing, 5000); medirPing();
+
+        f1.append(btnRef, selP, btnB1, btnB2, btnC, dLat);
+        p.append(f1);
+
+        // FILA 2: Calculadora
+        const f2 = document.createElement('div'); f2.className = 'fila-agente';
+        const dCal = document.createElement('div'); dCal.className = 'calc-box';
+        const iP = document.createElement('input'); iP.className = 'input-calc'; iP.placeholder = 'Yape';
+        const iD = document.createElement('input'); iD.className = 'input-calc'; iD.placeholder = '%'; iD.style.width = "35px";
+        const chk = document.createElement('input'); chk.type = 'checkbox';
+        const rA = document.createElement('span'); rA.className = 'res-val v-ahorro'; rA.innerText = 'Desc:0';
+        const rV = document.createElement('span'); rV.className = 'res-val v-final'; rV.innerText = 'Monto:0';
+        const rM = document.createElement('span'); rM.className = 'res-val v-cuota'; rM.innerText = 'Fracc:0';
+        const rS = document.createElement('span'); rS.className = 'res-val v-total-p'; rS.innerText = 'Plan+Fracc:0';
+        const calcLogic = () => {
+            const val = parseFloat(iP.value) || 0; const pct = parseFloat(iD.value) || 0;
+            let vV, cM, sA, aR;
+            if (chk.checked) {
+                iD.disabled = false; iD.style.background = "white"; iD.style.color = "black"; iP.placeholder = "Exigible";
+                aR = val * (pct / 100); vV = val - aR; cM = vV / 6; sA = val + cM; rA.innerText = `Desc:${aR.toFixed(1)}`;
+            } else {
+                iD.disabled = true; iD.style.background = "#7f8c8d"; iD.style.color = "white"; iP.placeholder = "Yape";
+                aR = 0; vV = val; cM = vV / 6; sA = (vV / 0.75) + cM; rA.innerText = `Desc:-`;
+            }
+            rV.innerText = `Monto:${vV.toFixed(1)}`; rM.innerText = `Fracc:${cM.toFixed(1)}`; rS.innerText = `Plan+Fracc:${sA.toFixed(1)}`;
+        };
+        iP.oninput = calcLogic; iD.oninput = calcLogic; chk.onchange = calcLogic;
+        calcLogic();
+        dCal.append(iP, iD, chk, rA, rV, rM, rS); f2.append(dCal);
+        p.append(f2);
+
+        // FILA 3: Registro y Contadores
+        const f3 = document.createElement('div'); f3.className = 'fila-agente';
+        const selAg = document.createElement('select'); selAg.className = 'select-agente-reg'; selAg.style.width = "80px";
+        const optDefA = document.createElement('option'); optDefA.innerText = "👤 AGENTE"; selAg.append(optDefA);
+        const BLOQUEO_PERMANENTE = true;
+
+        const inM = document.createElement('input'); inM.className = 'input-reg'; inM.placeholder = 'Móvil'; inM.style.width = "65px";
+        const inF = document.createElement('input'); inF.type = 'date'; inF.className = 'input-reg'; inF.style.width = "65px";
+        const btnR = document.createElement('button'); btnR.className = 'btn-agente'; btnR.style.background = '#3DBB9A'; btnR.innerText = 'PDP';
+
+        const dAvance = document.createElement('div'); dAvance.className = 'avance-box'; dAvance.innerText = '...';
+        const dAvancePlus = document.createElement('div'); dAvancePlus.className = 'avance-box'; dAvancePlus.innerText = '...'; dAvancePlus.style.color = '#1b7e41';
+        const dAvanceF = document.createElement('div'); dAvanceF.className = 'avance-box'; dAvanceF.innerText = '...'; dAvanceF.style.color = '#0b518f';
+
+        const actualizarAvance = async () => {
+            const nombreActual = selAg.value;
+            if (!nombreActual || nombreActual === "👤 AGENTE") return;
+            try {
+                const r = await fetch(`${URL_AVANCE}?agente=${encodeURIComponent(nombreActual)}`);
+                const num = await r.text();
+                if(selAg.value === nombreActual) dAvance.innerText = num || "0";
+            } catch (e) { dAvance.innerText = 'err'; }
+        };
+
+        const actualizarAvancePlus = async () => {
+            const nombreActual = selAg.value;
+            if (!nombreActual || nombreActual === "👤 AGENTE") return;
+            try {
+                const r = await fetch(`${URL_AVANCE_PLUS}?agente=${encodeURIComponent(nombreActual)}`);
+                const num = await r.text();
+                if(selAg.value === nombreActual) dAvancePlus.innerText = num || "0";
+            } catch (e) { dAvancePlus.innerText = 'err'; }
+        };
+
+        const actualizarAvanceF = async () => {
+            const nombreActual = selAg.value;
+            if (!nombreActual || nombreActual === "👤 AGENTE") return;
+            try {
+                const r = await fetch(`${URL_AVANCE_F}?agente=${encodeURIComponent(nombreActual)}`);
+                const num = await r.text();
+                if(selAg.value === nombreActual) dAvanceF.innerText = num || "0";
+            } catch (e) { dAvanceF.innerText = 'err'; }
+        };
+
+        selAg.onchange = () => {
+            if (selAg.value !== "👤 AGENTE") {
+                localStorage.setItem('agente_fijo', selAg.value);
+                if(BLOQUEO_PERMANENTE) selAg.disabled = true;
+                actualizarAvance(); actualizarAvancePlus(); actualizarAvanceF();
+            }
+        };
+
+        btnR.onclick = async () => {
+            if(!selAg.value || !inM.value || !inF.value) { btnR.style.background = '#e67e22'; setTimeout(()=>btnR.style.background='#3DBB9A', 1000); return; }
+            const [anio, mes, dia] = inF.value.split('-'); const fFull = `${dia}/${mes}/${anio}`;
+            btnR.innerText = "..."; btnR.style.background = '#f1c40f';
+            try {
+                await fetch(URL_REGISTRO, { method: 'POST', mode: 'no-cors', body: JSON.stringify({movil: inM.value, fechaPromesa: fFull, agente: selAg.value}) });
+                btnR.style.background = '#3DBB9A'; inM.value = ""; inF.value = "";
+            } catch (e) { btnR.style.background = '#c0392b'; setTimeout(() => btnR.style.background = '#3DBB9A', 2000); } finally { 
+                btnR.innerText = "PDP";
+                setTimeout(() => { actualizarAvance(); actualizarAvancePlus(); actualizarAvanceF(); }, 10000);
+            }
+        };
+
+        f3.append(selAg, inM, inF, btnR, dAvance, dAvancePlus, dAvanceF);
+        p.append(f3);
+
+        // FILA 4: Estrategias
+        const f4 = document.createElement('div'); f4.className = 'fila-agente';
+        const dColaBox = document.createElement('div'); dColaBox.id = 'container-estrategia'; dColaBox.className = 'calc-box'; dColaBox.style.background = 'rgba(61, 187, 154, 0.1)';
+        const selEst = document.createElement('select'); selEst.className = 'select-agente-reg'; selEst.style.width = "80px";
+        const optAuto = document.createElement('option'); optAuto.innerText = "📈 AUTO"; optAuto.value = "AUTO"; selEst.append(optAuto);
+        ["Estrategia 1", "Estrategia 2", "Estrategia 3", "Estrategia 4", "Estrategia 5"].forEach(e => { const o = document.createElement('option'); o.innerText = o.value = e; selEst.append(o); });
+        const resCola = document.createElement('span'); resCola.className = 'res-val'; resCola.style.cssText = 'color:#333; flex:1; text-align:center; border-right:1px solid #ccc; cursor:pointer; overflow: hidden; text-overflow: ellipsis;';
+        resCola.innerText = '---';
+        const resCuartil = document.createElement('span'); resCuartil.className = 'res-val'; resCuartil.style.cssText = 'color:#0b518f; min-width:60px; text-align:center; font-weight:bold;'; resCuartil.innerText = 'C: -';
+        const iconMsg = document.createElement('span'); iconMsg.className = 'time-copy'; iconMsg.innerText = "📩"; iconMsg.style.cssText = "cursor:pointer; font-size: 14px; margin-left: 5px; min-width:35px; text-align:center;";
+        iconMsg.style.display = 'none';
+
+        const copiarEstrategia = () => {
+            const textoOriginal = resCola.innerText;
+            if (textoOriginal !== "---" && textoOriginal !== "..." && textoOriginal !== "¡Copiado!") {
+                navigator.clipboard.writeText(textoOriginal);
+                const ahora = new Date(); const horaStr = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
+                localStorage.setItem(`last_copy_${selEst.value}`, horaStr);
+                resCola.innerText = "¡Copiado!"; resCola.style.color = "#3DBB9A";
+                iconMsg.innerText = horaStr; iconMsg.style.fontSize = "10px"; iconMsg.style.display = 'inline';
+                setTimeout(() => { resCola.innerText = textoOriginal; resCola.style.color = (dColaBox.classList.contains('alerta-parpadeante') || dColaBox.classList.contains('alerta-desconectado')) ? "white" : "#333"; }, 1000);
+            }
+        };
+        resCola.onclick = copiarEstrategia; iconMsg.onclick = copiarEstrategia;
+
+        let ultimoValorE = "";
+        let peticionActual = "";
+
+        const consultarEstrategia = async () => {
+            let seleccion = selEst.value;
+            let parametro = seleccion;
+            if (seleccion === "AUTO") {
+                const ag = selAg.value;
+                if (!ag || ag === "👤 AGENTE") { resCola.innerText = "Sel. Agente"; resCuartil.innerText = "C: -"; return; }
+                parametro = ag;
+            }
+            peticionActual = parametro;
+            try {
+                const r = await fetch(`${URL_ESTRATEGIAS}?estrategia=${encodeURIComponent(parametro)}`);
+                const raw = await r.text();
+                let valE = raw, valQ = "-";
+                if (raw.includes('|')) { const partes = raw.split('|'); valE = partes[0].trim(); valQ = partes[1].trim(); }
+                if (peticionActual !== parametro) return;
+
+                const savedTime = localStorage.getItem(`last_copy_${selEst.value}`);
+                
+                // --- INTERVENCIÓN QUIRÚRGICA: Lógica de conexión automática ---
+                if (ultimoValorE !== "" && ultimoValorE !== valE) {
+                    iconMsg.innerText = "📩"; iconMsg.style.fontSize = "14px"; iconMsg.style.display = 'inline';
+                    // Al ser diferente, se asume nueva estrategia y se ejecuta la reconexión guardada
+                    localStorage.setItem('ultima_campaña', valE);
+                    reasignarCampañaYConectar(); 
+                } else if (savedTime) { 
+                    iconMsg.innerText = savedTime; iconMsg.style.fontSize = "10px"; iconMsg.style.display = 'inline'; 
+                }
+
+                if (resCola.innerText !== "¡Copiado!") { 
+                    ultimoValorE = valE; resCola.innerText = valE; resCuartil.innerText = `C: ${valQ}`; 
+                }
+
+                const dSup = document.getElementById('campana-display');
+                const btnConectar = document.getElementById('btnRegister');
+                if (dSup) {
+                    const nomC = dSup.innerText.split(' - ')[1]?.split(' (')[0] || "";
+                    if (btnConectar && !btnConectar.disabled && btnConectar.style.display !== 'none') { 
+                        dColaBox.classList.remove('alerta-parpadeante'); dColaBox.classList.add('alerta-desconectado'); resCola.style.color = "white"; 
+                    } else if (valE !== "" && valE !== "---" && valE !== nomC) { 
+                        dColaBox.classList.remove('alerta-desconectado'); dColaBox.classList.add('alerta-parpadeante'); resCola.style.color = "white"; 
+                    } else { 
+                        dColaBox.style.background = 'rgba(61, 187, 154, 0.2)'; dColaBox.classList.remove('alerta-parpadeante', 'alerta-desconectado'); resCola.style.color = "#333"; 
+                    }
+                }
+            } catch (e) { if (peticionActual === parametro) { resCola.innerText = "Error"; resCuartil.innerText = "C: Error"; } }
+        };
+
+        selEst.onchange = () => { ultimoValorE = ""; resCola.innerText = "..."; resCuartil.innerText = "C: ..."; iconMsg.style.display = 'none'; consultarEstrategia(); };
+        setInterval(consultarEstrategia, 2000);
+
+        dColaBox.append(selEst, resCola, resCuartil, iconMsg);
+        f4.append(dColaBox);
+        p.append(f4);
+
+        // Carga de Agentes
+        const cargarAgentes = async () => {
+            try {
+                const r = await fetch(URL_LISTA_AGENTES);
+                const agentes = await r.json();
+                if (Array.isArray(agentes)) {
+                    LISTA_AGENTES = agentes;
+                    const guardado = localStorage.getItem('agente_fijo');
+                    selAg.innerHTML = ""; selAg.append(optDefA);
+                    LISTA_AGENTES.sort().forEach(a => { const o = document.createElement('option'); o.innerText = o.value = a; selAg.append(o); });
+                    if (guardado) { selAg.value = guardado; if(BLOQUEO_PERMANENTE) selAg.disabled = true; }
+                }
+            } catch (e) { console.error("Error al cargar lista de agentes"); }
+        };
+        cargarAgentes(); setInterval(cargarAgentes, 300000);
+
+        document.body.append(p);
+        setTimeout(reasignarCampañaYConectar, 1500);
+    }
+    setTimeout(iniciarAppsAgente, 20);
+})();
