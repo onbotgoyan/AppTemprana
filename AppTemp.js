@@ -1,13 +1,16 @@
 // ==UserScript==
-// @name         Apps para Agente (V6.1)
+// @name         Apps para Agente (V6.3)
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.3
 // @description  Apps CRM
 // @author       Yancarlos
 // @match        https://home1_ch.mibot.cl/softphone/webphonev2.php*
+// @updateURL    https://raw.githubusercontent.com/onbotgoyan/AppTemprana/main/AppTemp.js
+// @downloadURL  https://raw.githubusercontent.com/onbotgoyan/AppTemprana/main/AppTemp.js
 // @grant        none
 // @run-at       document-end
 // ==/UserScript==
+
 (function() {
     'use strict';
 
