@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Apps para Agente (V7)
+// @name         Apps para Agente (V7.2)
 // @namespace    http://tampermonkey.net/
-// @version      7.0
+// @version      7.2
 // @description  Apps CRM
 // @author       Yancarlos
 // @match        https://home1_ch.mibot.cl/softphone/webphonev2.php*
@@ -48,7 +48,6 @@
 (function() {
     'use strict';
 
-    // URLs de conexión
     const URL_REGISTRO = "https://script.google.com/macros/s/AKfycbytENmtW_2zZFmQ0EiynSpAiCL8H3hoW2_iQ0uvh-paEb0yCU55crIVGnUInmY0lKvZgQ/exec";
     const URL_AVANCE = "https://script.google.com/macros/s/AKfycbyZMFrt4zi-JFMoX9sLxjfuipCmpdEhqDt_9L6AgQn1PQVYsqV_5gWxyV7hXatEEUBjNw/exec";
     const URL_AVANCE_PLUS = "https://script.google.com/macros/s/AKfycbwIijctr6-z-_FqVhWESKenC6CcURRf0DCw6Lj1GqHHWDP9etayspSEmr3hxhfTIXR1_w/exec";
@@ -56,7 +55,6 @@
     const URL_ESTRATEGIAS = "https://script.google.com/macros/s/AKfycbzC1xj9tk9oIFfL36-644UB1E1XrYUb26fsJgt_uAvqDRtGoyrksAh_BvSQ5iaAwrHvsw/exec";
     const URL_LISTA_AGENTES = "https://script.google.com/macros/s/AKfycbyCaZXaUfzbJsxL4SxTNgQhgy3E1zMmD0UPwFsCnP2GMCe7f9XgNVyw9WnNYUhORhn_QA/exec";
 
-    // URLs DINÁMICAS
     const URL_SPEECH_DINAMICO = "https://script.google.com/macros/s/AKfycbyaUAQshAn6g3dSl2HaNwwn0kyGQ66whz-IbBrhnMUFpOTpgxybzQMKyvO2A4vEA0VfGw/exec";
     const URL_FRACC_DINAMICO = "https://script.google.com/macros/s/AKfycbwoFgnE0c2kiz3NcQUroVEQjVyrvHVIgK3i2IhsGIARviqxcBUCtWb1-aIvG0qKO9Q52Q/exec";
     const URL_REFUT_DINAMICO = "https://script.google.com/macros/s/AKfycbw3gfUMmkZTPGNoadliAvvhqekHXWhvaWtpVfOMfuYXSBmlKTe0REvgfkhP8pGqpoly8g/exec";
@@ -441,9 +439,10 @@
         // FILA 4: Estrategias
         const f4 = document.createElement('div'); f4.className = 'fila-agente';
         const dColaBox = document.createElement('div'); dColaBox.id = 'container-estrategia'; dColaBox.className = 'calc-box'; dColaBox.style.background = 'rgba(61, 187, 154, 0.1)';
-        const selEst = document.createElement('select'); selEst.className = 'select-agente-reg'; selEst.style.width = "80px";
+
+        const selEst = document.createElement('select');
         const optAuto = document.createElement('option'); optAuto.innerText = "📈 AUTO"; optAuto.value = "AUTO"; selEst.append(optAuto);
-        ["Estrategia 1", "Estrategia 2", "Estrategia 3", "Estrategia 4", "Estrategia 5"].forEach(e => { const o = document.createElement('option'); o.innerText = o.value = e; selEst.append(o); });
+
         const resCola = document.createElement('span'); resCola.className = 'res-val'; resCola.style.cssText = 'color:#333; flex:1; text-align:center; border-right:1px solid #ccc; cursor:pointer; overflow: hidden; text-overflow: ellipsis;';
         resCola.innerText = '---';
         const resCuartil = document.createElement('span'); resCuartil.className = 'res-val'; resCuartil.style.cssText = 'color:#0b518f; min-width:60px; text-align:center; font-weight:bold;'; resCuartil.innerText = 'C: -';
@@ -484,10 +483,8 @@
 
                 const savedTime = localStorage.getItem(`last_copy_${selEst.value}`);
 
-                // --- INTERVENCIÓN QUIRÚRGICA: Lógica de conexión automática ---
                 if (ultimoValorE !== "" && ultimoValorE !== valE) {
                     iconMsg.innerText = "📩"; iconMsg.style.fontSize = "14px"; iconMsg.style.display = 'inline';
-                    // Al ser diferente, se asume nueva estrategia y se ejecuta la reconexión guardada
                     localStorage.setItem('ultima_campaña', valE);
                     reasignarCampañaYConectar();
                 } else if (savedTime) {
@@ -504,7 +501,12 @@
                     const nomC = dSup.innerText.split(' - ')[1]?.split(' (')[0] || "";
                     if (btnConectar && !btnConectar.disabled && btnConectar.style.display !== 'none') {
                         dColaBox.classList.remove('alerta-parpadeante'); dColaBox.classList.add('alerta-desconectado'); resCola.style.color = "white";
-                    } else if (valE !== "" && valE !== "---" && valE !== nomC) {
+                    // ── MODIFICACIÓN QUIRÚRGICA ──────────────────────────────────────
+                    // Se elimina el prefijo "[Predictivo] - " de valE antes de comparar
+                    // con nomC (nombre de campaña en el DOM del CRM), que no lo lleva.
+                    // valE se muestra y guarda intacto; solo la comparación lo recorta.
+                    } else if (valE !== "" && valE !== "---" && valE.replace(/^\[Predictivo\]\s*-\s*/, "") !== nomC) {
+                    // ────────────────────────────────────────────────────────────────
                         dColaBox.classList.remove('alerta-desconectado'); dColaBox.classList.add('alerta-parpadeante'); resCola.style.color = "white";
                     } else {
                         dColaBox.style.background = 'rgba(61, 187, 154, 0.2)'; dColaBox.classList.remove('alerta-parpadeante', 'alerta-desconectado'); resCola.style.color = "#333";
@@ -516,7 +518,7 @@
         selEst.onchange = () => { ultimoValorE = ""; resCola.innerText = "..."; resCuartil.innerText = "C: ..."; iconMsg.style.display = 'none'; consultarEstrategia(); };
         setInterval(consultarEstrategia, 2000);
 
-        dColaBox.append(selEst, resCola, resCuartil, iconMsg);
+        dColaBox.append(resCola, resCuartil, iconMsg);
         f4.append(dColaBox);
         p.append(f4);
 
