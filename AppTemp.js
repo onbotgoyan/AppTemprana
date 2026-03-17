@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Apps para Agente (V6.9.6)
+// @name         Apps para Agente (V7)
 // @namespace    http://tampermonkey.net/
-// @version      1.9.6
+// @version      7.0
 // @description  Apps CRM
 // @author       Yancarlos
 // @match        https://home1_ch.mibot.cl/softphone/webphonev2.php*
@@ -15,26 +15,48 @@
     'use strict';
 
     const css = `
-        .centrado { text-align: left !important; display: flex !important; justify-content: flex-start !important; padding-left: 80px !important; }
-        @keyframes parpadeoRojo { 0% { background-color: #C22100; } 50% { background-color: rgba(194, 33, 0, 0.5); } 100% { background-color: #C22100; } }
-        @keyframes parpadeoNaranja { 0% { background-color: #FF8C00; } 50% { background-color: rgba(255, 140, 0, 0.5); } 100% { background-color: #FF8C00; } }
-        .alerta-desconectado { animation: parpadeoRojo 1s infinite !important; }
-        .alerta-parpadeante { animation: parpadeoNaranja 1s infinite !important; }
+        .centrado {
+            text-align: left !important;
+            display: flex !important;
+            justify-content: flex-start !important;
+            padding-left: 80px !important;
+        }
+        @keyframes parpadeoRojo {
+            0% { background-color: #C22100; }
+            50% { background-color: rgba(194, 33, 0, 0.5); }
+            100% { background-color: #C22100; }
+        }
+        @keyframes parpadeoNaranja {
+            0% { background-color: #FF8C00; }
+            50% { background-color: rgba(255, 140, 0, 0.5); }
+            100% { background-color: #FF8C00; }
+        }
+        .alerta-desconectado {
+            animation: parpadeoRojo 1s infinite !important;
+        }
+        .alerta-parpadeante {
+            animation: parpadeoNaranja 1s infinite !important;
+        }
     `;
+
     const style = document.createElement('style');
     style.innerHTML = css;
     document.head.appendChild(style);
+
 })();
 
 (function() {
     'use strict';
 
+    // URLs de conexión
     const URL_REGISTRO = "https://script.google.com/macros/s/AKfycbytENmtW_2zZFmQ0EiynSpAiCL8H3hoW2_iQ0uvh-paEb0yCU55crIVGnUInmY0lKvZgQ/exec";
     const URL_AVANCE = "https://script.google.com/macros/s/AKfycbyZMFrt4zi-JFMoX9sLxjfuipCmpdEhqDt_9L6AgQn1PQVYsqV_5gWxyV7hXatEEUBjNw/exec";
     const URL_AVANCE_PLUS = "https://script.google.com/macros/s/AKfycbwIijctr6-z-_FqVhWESKenC6CcURRf0DCw6Lj1GqHHWDP9etayspSEmr3hxhfTIXR1_w/exec";
     const URL_AVANCE_F = "https://script.google.com/macros/s/AKfycbzSOt75Hr3vcp_cxYWLUcER0OCtWwkGXZ2XqeM_6ZgapTNuVq9ww4iJA8CBLOvVh9yBnw/exec";
     const URL_ESTRATEGIAS = "https://script.google.com/macros/s/AKfycbzC1xj9tk9oIFfL36-644UB1E1XrYUb26fsJgt_uAvqDRtGoyrksAh_BvSQ5iaAwrHvsw/exec";
     const URL_LISTA_AGENTES = "https://script.google.com/macros/s/AKfycbyCaZXaUfzbJsxL4SxTNgQhgy3E1zMmD0UPwFsCnP2GMCe7f9XgNVyw9WnNYUhORhn_QA/exec";
+
+    // URLs DINÁMICAS
     const URL_SPEECH_DINAMICO = "https://script.google.com/macros/s/AKfycbyaUAQshAn6g3dSl2HaNwwn0kyGQ66whz-IbBrhnMUFpOTpgxybzQMKyvO2A4vEA0VfGw/exec";
     const URL_FRACC_DINAMICO = "https://script.google.com/macros/s/AKfycbwoFgnE0c2kiz3NcQUroVEQjVyrvHVIgK3i2IhsGIARviqxcBUCtWb1-aIvG0qKO9Q52Q/exec";
     const URL_REFUT_DINAMICO = "https://script.google.com/macros/s/AKfycbw3gfUMmkZTPGNoadliAvvhqekHXWhvaWtpVfOMfuYXSBmlKTe0REvgfkhP8pGqpoly8g/exec";
@@ -46,7 +68,10 @@
 
         function obtenerCampañaReal() {
             const btnCampana = document.querySelector('button[data-id="selCampana"] span.filter-option');
-            if (btnCampana) { const txt = btnCampana.innerText.trim(); return (txt !== "" && txt !== "Seleccione") ? txt : null; }
+            if (btnCampana) {
+                const txt = btnCampana.innerText.trim();
+                return (txt !== "" && txt !== "Seleccione") ? txt : null;
+            }
             return null;
         }
 
@@ -59,7 +84,9 @@
                 const porcentaje = barraOriginal.getAttribute('aria-valuenow') || "0";
                 display.innerText = `CAMPAÑA: ${detectada} (${porcentaje}%)`;
                 display.style.background = `linear-gradient(to right, #3DBB9A ${porcentaje}%, #34495e ${porcentaje}%)`;
-            } else if (display) { display.innerText = "CAMPAÑA: " + detectada; }
+            } else if (display) {
+                display.innerText = "CAMPAÑA: " + detectada;
+            }
         }
 
         async function reasignarCampañaYConectar() {
@@ -79,7 +106,12 @@
                 await new Promise(r => setTimeout(r, 300));
                 const opcionesCamp = document.querySelectorAll('.dropdown-menu.open li a span.text');
                 let exito = false;
-                opcionesCamp.forEach(opt => { if (opt.innerText.trim() === guardada) { opt.click(); exito = true; } });
+                opcionesCamp.forEach(opt => {
+                    if (opt.innerText.trim() === guardada) {
+                        opt.click();
+                        exito = true;
+                    }
+                });
                 if (exito || btnCampana.innerText.trim() === guardada) {
                     await new Promise(r => setTimeout(r, 500));
                     const btnConectar = document.getElementById('btnRegister');
@@ -89,6 +121,7 @@
         }
 
         setInterval(monitorearCampaña, 5000);
+
         const hoy = new Date();
         const diasSemana = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
         const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -106,7 +139,9 @@
                         if (opt.tagName === 'OPTION') {
                             opt.selected = true;
                             opt.parentElement.dispatchEvent(new Event('change', { bubbles: true }));
-                        } else { opt.click(); }
+                        } else {
+                            opt.click();
+                        }
                         break;
                     }
                 }
@@ -141,6 +176,7 @@
         `;
         document.head.appendChild(style);
 
+        // --- CHECKLIST CALIDAD ---
         const wrapperCheck = document.createElement('div');
         wrapperCheck.className = 'wrapper-checklist';
         const btnToggleCheck = document.createElement('button');
@@ -197,6 +233,7 @@
         wrapperCheck.append(btnToggleCheck, pCheck);
         document.body.append(wrapperCheck);
 
+        // --- PANELES DINÁMICOS ---
         const pContrato = document.createElement('div');
         pContrato.className = 'panel-drop-info';
         pContrato.innerHTML = `<h4 style="margin:0 0 5px 0; color:#0b518f; font-size:13px; border-bottom:1px solid #999;"><b>📓 SCRIPT FRACCIONAMIENTO</b></h4><div id="fracc-content-m2" style="font-size: 10.5px; line-height: 1.35; text-align: justify; color: #222;">Cargando script M2...</div>`;
@@ -238,6 +275,7 @@
         dCamp.innerText = "CAMPAÑA: " + (localStorage.getItem('ultima_campaign') || "...");
         p.append(dCamp);
 
+        // FILA 1: Refresco, Plantillas, SPEECH, REFUT, FRACC + LATENCIA
         const f1 = document.createElement('div'); f1.className = 'fila-agente';
         const btnRef = document.createElement('button'); btnRef.className = 'btn-agente'; btnRef.innerText = '🔄'; btnRef.onclick = () => location.reload();
         const configP = [
@@ -280,6 +318,7 @@
             if (panelActivo === pB1 && pB1.style.display === 'flex') actualizarSpeechDinamico();
             if (panelActivo === pB2 && pB2.style.display === 'flex') actualizarRefutDinamico();
         };
+
         btnB1.onclick = () => togglePanel(pB1);
         btnB2.onclick = () => togglePanel(pB2);
         btnC.onclick = () => togglePanel(pContrato);
@@ -300,9 +339,11 @@
             dLat.innerText = 'OFF'; dLat.style.color = "#d63031";
         };
         setInterval(medirPing, 5000); medirPing();
+
         f1.append(btnRef, selP, btnB1, btnB2, btnC, dLat);
         p.append(f1);
 
+        // FILA 2: Calculadora
         const f2 = document.createElement('div'); f2.className = 'fila-agente';
         const dCal = document.createElement('div'); dCal.className = 'calc-box';
         const iP = document.createElement('input'); iP.className = 'input-calc'; iP.placeholder = 'Yape';
@@ -329,13 +370,16 @@
         dCal.append(iP, iD, chk, rA, rV, rM, rS); f2.append(dCal);
         p.append(f2);
 
+        // FILA 3: Registro y Contadores
         const f3 = document.createElement('div'); f3.className = 'fila-agente';
         const selAg = document.createElement('select'); selAg.className = 'select-agente-reg'; selAg.style.width = "80px";
         const optDefA = document.createElement('option'); optDefA.innerText = "👤 AGENTE"; selAg.append(optDefA);
         const BLOQUEO_PERMANENTE = true;
+
         const inM = document.createElement('input'); inM.className = 'input-reg'; inM.placeholder = 'Móvil'; inM.style.width = "65px";
         const inF = document.createElement('input'); inF.type = 'date'; inF.className = 'input-reg'; inF.style.width = "65px";
         const btnR = document.createElement('button'); btnR.className = 'btn-agente'; btnR.style.background = '#3DBB9A'; btnR.innerText = 'PDP';
+
         const dAvance = document.createElement('div'); dAvance.className = 'avance-box'; dAvance.innerText = '...';
         const dAvancePlus = document.createElement('div'); dAvancePlus.className = 'avance-box'; dAvancePlus.innerText = '...'; dAvancePlus.style.color = '#1b7e41';
         const dAvanceF = document.createElement('div'); dAvanceF.className = 'avance-box'; dAvanceF.innerText = '...'; dAvanceF.style.color = '#0b518f';
@@ -349,6 +393,7 @@
                 if(selAg.value === nombreActual) dAvance.innerText = num || "0";
             } catch (e) { dAvance.innerText = 'err'; }
         };
+
         const actualizarAvancePlus = async () => {
             const nombreActual = selAg.value;
             if (!nombreActual || nombreActual === "👤 AGENTE") return;
@@ -358,6 +403,7 @@
                 if(selAg.value === nombreActual) dAvancePlus.innerText = num || "0";
             } catch (e) { dAvancePlus.innerText = 'err'; }
         };
+
         const actualizarAvanceF = async () => {
             const nombreActual = selAg.value;
             if (!nombreActual || nombreActual === "👤 AGENTE") return;
@@ -367,7 +413,7 @@
                 if(selAg.value === nombreActual) dAvanceF.innerText = num || "0";
             } catch (e) { dAvanceF.innerText = 'err'; }
         };
-        setInterval(actualizarAvance, 2000); setInterval(actualizarAvancePlus, 2000); setInterval(actualizarAvanceF, 2000);
+
         selAg.onchange = () => {
             if (selAg.value !== "👤 AGENTE") {
                 localStorage.setItem('agente_fijo', selAg.value);
@@ -375,6 +421,7 @@
                 actualizarAvance(); actualizarAvancePlus(); actualizarAvanceF();
             }
         };
+
         btnR.onclick = async () => {
             if(!selAg.value || !inM.value || !inF.value) { btnR.style.background = '#e67e22'; setTimeout(()=>btnR.style.background='#3DBB9A', 1000); return; }
             const [anio, mes, dia] = inF.value.split('-'); const fFull = `${dia}/${mes}/${anio}`;
@@ -382,11 +429,16 @@
             try {
                 await fetch(URL_REGISTRO, { method: 'POST', mode: 'no-cors', body: JSON.stringify({movil: inM.value, fechaPromesa: fFull, agente: selAg.value}) });
                 btnR.style.background = '#3DBB9A'; inM.value = ""; inF.value = "";
-            } catch (e) { btnR.style.background = '#c0392b'; setTimeout(() => btnR.style.background = '#3DBB9A', 2000); } finally { btnR.innerText = "PDP"; }
+            } catch (e) { btnR.style.background = '#c0392b'; setTimeout(() => btnR.style.background = '#3DBB9A', 2000); } finally {
+                btnR.innerText = "PDP";
+                setTimeout(() => { actualizarAvance(); actualizarAvancePlus(); actualizarAvanceF(); }, 10000);
+            }
         };
+
         f3.append(selAg, inM, inF, btnR, dAvance, dAvancePlus, dAvanceF);
         p.append(f3);
 
+        // FILA 4: Estrategias
         const f4 = document.createElement('div'); f4.className = 'fila-agente';
         const dColaBox = document.createElement('div'); dColaBox.id = 'container-estrategia'; dColaBox.className = 'calc-box'; dColaBox.style.background = 'rgba(61, 187, 154, 0.1)';
         const selEst = document.createElement('select'); selEst.className = 'select-agente-reg'; selEst.style.width = "80px";
@@ -413,10 +465,15 @@
 
         let ultimoValorE = "";
         let peticionActual = "";
+
         const consultarEstrategia = async () => {
             let seleccion = selEst.value;
-            let parametro = seleccion === "AUTO" ? (selAg.value !== "👤 AGENTE" ? selAg.value : "") : seleccion;
-            if (!parametro && seleccion === "AUTO") { resCola.innerText = "Sel. Agente"; return; }
+            let parametro = seleccion;
+            if (seleccion === "AUTO") {
+                const ag = selAg.value;
+                if (!ag || ag === "👤 AGENTE") { resCola.innerText = "Sel. Agente"; resCuartil.innerText = "C: -"; return; }
+                parametro = ag;
+            }
             peticionActual = parametro;
             try {
                 const r = await fetch(`${URL_ESTRATEGIAS}?estrategia=${encodeURIComponent(parametro)}`);
@@ -424,31 +481,46 @@
                 let valE = raw, valQ = "-";
                 if (raw.includes('|')) { const partes = raw.split('|'); valE = partes[0].trim(); valQ = partes[1].trim(); }
                 if (peticionActual !== parametro) return;
-                
-                // MANTENIENDO TU LÓGICA, AGREGANDO LA CONEXIÓN AUTOMÁTICA AQUÍ:
+
+                const savedTime = localStorage.getItem(`last_copy_${selEst.value}`);
+
+                // --- INTERVENCIÓN QUIRÚRGICA: Lógica de conexión automática ---
                 if (ultimoValorE !== "" && ultimoValorE !== valE) {
-                    localStorage.setItem('ultima_campaña', valE);
-                    reasignarCampañaYConectar(); // Esta es la misma función que usas al inicio
                     iconMsg.innerText = "📩"; iconMsg.style.fontSize = "14px"; iconMsg.style.display = 'inline';
+                    // Al ser diferente, se asume nueva estrategia y se ejecuta la reconexión guardada
+                    localStorage.setItem('ultima_campaña', valE);
+                    reasignarCampañaYConectar();
+                } else if (savedTime) {
+                    iconMsg.innerText = savedTime; iconMsg.style.fontSize = "10px"; iconMsg.style.display = 'inline';
                 }
 
-                if (resCola.innerText !== "¡Copiado!") { ultimoValorE = valE; resCola.innerText = valE; resCuartil.innerText = `C: ${valQ}`; }
+                if (resCola.innerText !== "¡Copiado!") {
+                    ultimoValorE = valE; resCola.innerText = valE; resCuartil.innerText = `C: ${valQ}`;
+                }
+
                 const dSup = document.getElementById('campana-display');
                 const btnConectar = document.getElementById('btnRegister');
                 if (dSup) {
                     const nomC = dSup.innerText.split(' - ')[1]?.split(' (')[0] || "";
-                    if (btnConectar && !btnConectar.disabled && btnConectar.style.display !== 'none') { dColaBox.classList.remove('alerta-parpadeante'); dColaBox.classList.add('alerta-desconectado'); resCola.style.color = "white"; }
-                    else if (valE !== "" && valE !== "---" && valE !== nomC) { dColaBox.classList.remove('alerta-desconectado'); dColaBox.classList.add('alerta-parpadeante'); resCola.style.color = "white"; }
-                    else { dColaBox.style.background = 'rgba(61, 187, 154, 0.2)'; dColaBox.classList.remove('alerta-parpadeante', 'alerta-desconectado'); resCola.style.color = "#333"; }
+                    if (btnConectar && !btnConectar.disabled && btnConectar.style.display !== 'none') {
+                        dColaBox.classList.remove('alerta-parpadeante'); dColaBox.classList.add('alerta-desconectado'); resCola.style.color = "white";
+                    } else if (valE !== "" && valE !== "---" && valE !== nomC) {
+                        dColaBox.classList.remove('alerta-desconectado'); dColaBox.classList.add('alerta-parpadeante'); resCola.style.color = "white";
+                    } else {
+                        dColaBox.style.background = 'rgba(61, 187, 154, 0.2)'; dColaBox.classList.remove('alerta-parpadeante', 'alerta-desconectado'); resCola.style.color = "#333";
+                    }
                 }
             } catch (e) { if (peticionActual === parametro) { resCola.innerText = "Error"; resCuartil.innerText = "C: Error"; } }
         };
+
         selEst.onchange = () => { ultimoValorE = ""; resCola.innerText = "..."; resCuartil.innerText = "C: ..."; iconMsg.style.display = 'none'; consultarEstrategia(); };
         setInterval(consultarEstrategia, 2000);
+
         dColaBox.append(selEst, resCola, resCuartil, iconMsg);
         f4.append(dColaBox);
         p.append(f4);
 
+        // Carga de Agentes
         const cargarAgentes = async () => {
             try {
                 const r = await fetch(URL_LISTA_AGENTES);
@@ -463,6 +535,7 @@
             } catch (e) { console.error("Error al cargar lista de agentes"); }
         };
         cargarAgentes(); setInterval(cargarAgentes, 300000);
+
         document.body.append(p);
         setTimeout(reasignarCampañaYConectar, 1500);
     }
